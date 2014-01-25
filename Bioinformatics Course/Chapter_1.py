@@ -168,6 +168,8 @@ def sequence_mismatch(str, sequence, d):
 	for i in range(0, len(sequence) - len(str) + 1):
 		if approx_match(str, sequence[i:i+len(str)], d):
 			ls.append(i)
+		if approx_match(str, rev_comp(sequence[i:i+len(str)]), d):
+			ls.append(i)
 	return ls
 
 def create_graph(d_freq, mismathes):
@@ -244,19 +246,29 @@ def mutations(word, hamming_distance, charset='ATCG'):
 				mutation[index] = replacement
 				yield "".join(mutation)
 
+def all_mutations(seed, d):
+	ls = []
+	for i in range(1,d+2):
+		ls = ls + [x for x in mutations(seed, i)]
+	return ls
+
+
 
 def find_kmer_mismatch(seed, sequence, d):
+	"""Given a seed string, sequence, and d mismatches, find the
+	list of subsequences for which have the most frequence match with d mismatches"""
 	current_max = len(sequence_mismatch(seed, sequence, d))
 	ls = []
-	for i in set([x for x in mutations(seed, d)]):
+	for i in set(all_mutations(seed, d)): #set([x for x in mutations(seed, d)]):
 		test = sequence_mismatch(i, sequence, d)
 		if len(test) > current_max:
 			return find_kmer_mismatch(i, sequence, d)
-		elif len(test) == current_max:
+		elif len(test) == current_max or current_max - len(test) <=2: #ADDED LINE!!!
 			ls.append(i)
 	return ls
 
 def all_max_mismatch(ls, sequence, d):
+	"""Given a list of strings, return all the most frequent sequence_mismatch within the list"""
 	answer = []
 	current_max = 0
 	for i in ls:
@@ -269,11 +281,14 @@ def all_max_mismatch(ls, sequence, d):
 	return answer
 
 def final_mismatch(sequence, k, d):
+	"""Find all the most frequent kmers with d mismatches"""
 	ls = max_mismatch(sequence, k, d)
 	rest = []
 	for i in ls:
 		rest = rest + find_kmer_mismatch(i, sequence, d)
 	return all_max_mismatch(set(rest), sequence, d)
+
+
 
 
 data = read_data_file("data.txt")
@@ -297,7 +312,20 @@ e_coli = open("E-coli.txt").read()
 
 
 
-test = final_mismatch("CGCCTACGCTGCTGCTTACCGGGCGCCGCTGCTGCTGCTGCTCGCCTAATACCGCCCGCCCGCCCGCCGCTCGGGCGCCGCTTACGCTTACCGGGCGCCTACGCTTACGCTGCTGCTTACTAATAAGCTTACTAACGCCCGCCTAAGCTTACTAACGCCTACCGGGTAATACTACTACCGCCTAACGCCCGCCGCTTAACGGGGCTCGCCGCTGCTTACTACGCTCGGGGCTCGGGCGCCTACTACTAACGCCCGCCCGGGTAACGCCCGGGTAACGCCGCTCGGGGCTTACGCTTACGCTGCTCGGGTACTAAGCTGCTCGCCTACTACTAATACCGGGTAATAATAATACCGGGTAATAATAA", 9, 3)
-print_list_to_file(test)
-#print max_mismatch("CACAGTAGGCGCCGGCACACACAGCCCCGGGCCCCGGGCCGCCCCGGGCCGGCGGCCGCCGGCGCCGGCACACCGGCACAGCCGTACCGGCACAGTAGTACCGGCCGGCCGGCACACCGGCACACCGGGTACACACCGGGGCGCACACACAGGCGGGCGCCGGGCCCCGGGCCGTACCGGGCCGCCGGCGGCCCACAGGCGCCGGCACAGTACCGGCACACACAGTAGCCCACACACAGGCGGGCGGTAGCCGGCGCACACACACACAGTAGGCGCACAGCCGCCCACACACACCGGCCGGCCGGCACAGGCGGGCGGGCGCACACACACCGGCACAGTAGTAGGCGGCCGGCGCACAGCC", 10, 2)
-#print find_kmer_mismatch("GCGCACACAC", "CACAGTAGGCGCCGGCACACACAGCCCCGGGCCCCGGGCCGCCCCGGGCCGGCGGCCGCCGGCGCCGGCACACCGGCACAGCCGTACCGGCACAGTAGTACCGGCCGGCCGGCACACCGGCACACCGGGTACACACCGGGGCGCACACACAGGCGGGCGCCGGGCCCCGGGCCGTACCGGGCCGCCGGCGGCCCACAGGCGCCGGCACAGTACCGGCACACACAGTAGCCCACACACAGGCGGGCGGTAGCCGGCGCACACACACACAGTAGGCGCACAGCCGCCCACACACACCGGCCGGCCGGCACAGGCGGGCGGGCGCACACACACCGGCACAGTAGTAGGCGGCCGGCGCACAGCC", 2, 0)
+#test = final_mismatch("ACGTTGCATGTCGCATGATGCATGAGAGCT", 4, 1)
+#print_list_to_file(test)
+
+#print final_mismatch("ACGTTGCATGTCGCATGATGCATGAGAGCT", 9, 3)
+# print sequence_mismatch("ATGT", "ACGTTGCATGTCGCATGATGCATGAGAGCT", 1)
+# print sequence_mismatch("GCAT", "ACGTTGCATGTCGCATGATGCATGAGAGCT", 1)
+# print sequence_mismatch("ACAT", "ACGTTGCATGTCGCATGATGCATGAGAGCT", 1)
+
+# print all_mismatch("ACGTTGCATGTCGCATGATGCATGAGAGCT", 4, 1)["ATGT"]
+# print all_mismatch("ACGTTGCATGTCGCATGATGCATGAGAGCT", 4, 1)["ACAT"]
+print final_mismatch("CTTGCCGGCGCCGATTATACGATCGCGGCCGCTTGCCTTCTTTATAATGCATCGGCGCCGCGATCTTGCTATATACGTACGCTTCGCTTGCATCTTGCGCGCATTACGTACTTATCGATTACTTATCTTCGATGCCGGCCGGCATATGCCGCTTTAGCATCGATCGATCGTACTTTACGCGTATAGCCGCTTCGCTTGCCGTACGCGATGCTAGCATATGCTAGCGCTAATTACTTAT", 9,3)
+#print all_mutations("ATGT", 1)
+# test_sequence = "CTTGCCGGCGCCGATTATACGATCGCGGCCGCTTGCCTTCTTTATAATGCATCGGCGCCGCGATCTTGCTATATACGTACGCTTCGCTTGCATCTTGCGCGCATTACGTACTTATCGATTACTTATCTTCGATGCCGGCCGGCATATGCCGCTTTAGCATCGATCGATCGTACTTTACGCGTATAGCCGCTTCGCTTGCCGTACGCGATGCTAGCATATGCTAGCGCTAATTACTTAT"
+# print sequence_mismatch("GCGGCGCTT", test_sequence, 3)
+# print sequence_mismatch("AGCGCCGCT", test_sequence, 3)
+# print len(max_mismatch(test_sequence,9,3))
+# print all_mismatch(test_sequence, 9, 3)["GCGCCGCGA"]
